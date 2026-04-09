@@ -5,11 +5,13 @@ import { useOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/store/AuthContext';
 import { useLocation } from '@/hooks/useLocation';
 import * as Location from 'expo-location';
+import { useDriverLocation } from '@/hooks/useDriverLocation';
 
 export default function OrdersScreen() {
   const { orders, loading, createOrder, acceptOrder, updateOrderStatus } = useOrders();
   const { profile, user } = useAuth();
   const { location, isLoadingLocation } = useLocation();
+  useDriverLocation();
   
   // Estados para el formulario
   const [description, setDescription] = useState('');
@@ -24,7 +26,7 @@ export default function OrdersScreen() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
 
-  // Lógica actualizada para crear el pedido
+  // Lógica para crear el pedido
   const handleCreate = async () => {
     if (!description || !pickupCoords || !dropoffCoords) {
       Alert.alert('Atención', 'Por favor ingresa qué llevamos y marca los dos puntos en el mapa.');
@@ -33,8 +35,8 @@ export default function OrdersScreen() {
     
     setIsSubmitting(true);
 
-    // ENVIAMOS EL TEXTO TRADUCIDO, NO LAS COORDENADAS
-    const success = await createOrder(description, origin, destination);
+    // ENVIAMOS EL TEXTO TRADUCIDO Y LAS COORDENADAS DE RECOJO
+    const success = await createOrder(description, origin, destination, pickupCoords);
     
     if (success) {
       setDescription('');
@@ -47,40 +49,50 @@ export default function OrdersScreen() {
     setIsSubmitting(false);
   };
 
-  // Función que se dispara cuando el usuario toca el mapa
+  // Función BLINDADA que se dispara cuando el usuario toca el mapa
   const handleMapPress = async (e: any) => {
     const coords = e.nativeEvent.coordinate;
-    
-    // Mostramos un pequeño indicador de que estamos calculando la dirección
     setIsSubmitting(true); 
     
     try {
-      // Magia: Traducir lat/lng a una dirección legible
       const geocode = await Location.reverseGeocodeAsync(coords);
-      let addressText = "Dirección desconocida";
+      let addressText = "Ubicación seleccionada en el mapa"; // Valor por defecto seguro
       
       if (geocode.length > 0) {
         const place = geocode[0];
-        // Construimos una dirección amigable (Ej: "Avenida Banzer, Santa Cruz")
-        addressText = `${place.street || place.name || ''} ${place.streetNumber || ''}, ${place.city || ''}`.trim();
-        
-        // Si por alguna razón la calle está vacía pero tenemos el barrio/distrito
-        if (addressText === ',') addressText = place.subregion || place.region || 'Ubicación seleccionada';
+        // Intentamos armar la dirección si hay datos válidos
+        if (place.street || place.name) {
+          addressText = `${place.street || place.name || ''} ${place.streetNumber || ''}, ${place.city || place.subregion || 'Santa Cruz'}`.trim();
+          // Limpieza de comas sueltas
+          if (addressText === ',' || addressText.startsWith(',')) {
+            addressText = place.subregion || place.region || 'Ubicación seleccionada en el mapa';
+          }
+        }
       }
 
+      // Asignamos las coordenadas y el texto al estado correspondiente
       if (selectingMode === 'pickup') {
         setPickupCoords(coords);
-        // Guardamos la dirección legible temporalmente en el estado "origin" que usábamos antes
         setOrigin(addressText); 
         setSelectingMode('dropoff');
       } else {
         setDropoffCoords(coords);
-        // Guardamos la dirección legible temporalmente en el estado "destination"
         setDestination(addressText);
       }
+
     } catch (error) {
-      console.error("Error al traducir coordenada:", error);
-      Alert.alert("Error", "No pudimos obtener el nombre de esta calle.");
+      console.log("⚠️ Geocoding incompleto (calle sin nombre):", error);
+      
+      // FALLBACK DE EMERGENCIA: Si la API explota, igual guardamos el punto para no bloquear la app
+      const fallbackText = "Ubicación seleccionada en el mapa";
+      if (selectingMode === 'pickup') {
+        setPickupCoords(coords);
+        setOrigin(fallbackText);
+        setSelectingMode('dropoff');
+      } else {
+        setDropoffCoords(coords);
+        setDestination(fallbackText);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +106,6 @@ export default function OrdersScreen() {
           {item.status}
         </Text>
       </View>
-      {/* Mostramos las coordenadas (pronto lo cambiaremos a direcciones reales) */}
       <Text style={styles.orderRoute}>📍 {item.origin_address}</Text>
       <Text style={styles.orderRoute}>🏁 {item.destination_address}</Text>
       
@@ -141,9 +152,8 @@ export default function OrdersScreen() {
                 }}
                 showsUserLocation={true}
                 showsMyLocationButton={true}
-                onPress={handleMapPress} // Escuchamos los toques
+                onPress={handleMapPress}
               >
-                {/* Dibujamos los pines si existen */}
                 {pickupCoords && <Marker coordinate={pickupCoords} title="Punto de Recojo" pinColor="blue" />}
                 {dropoffCoords && <Marker coordinate={dropoffCoords} title="Punto de Entrega" pinColor="red" />}
               </MapView>
