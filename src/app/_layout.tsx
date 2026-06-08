@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '@/store/AuthContext';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 function InitialLayout() {
   const { session, isLoading } = useAuth();
+  usePushNotifications();
   const segments = useSegments();
   const router = useRouter();
 

@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import type { Order, OrderStatus } from '@/types';
+import { sendPushNotifications } from '@/services/notifications';
 
 export const useOrders = () => {
   const { user, profile } = useAuth();
@@ -87,6 +88,25 @@ export const useOrders = () => {
 
       if (error) throw error;
 
+      const { data: tokens } = await supabase.rpc('get_driver_push_tokens', {
+        pickup_lat: pickupCoords.latitude,
+        pickup_lng: pickupCoords.longitude,
+        radio_metros: 50000,
+      });
+
+      if (tokens && tokens.length > 0) {
+        await sendPushNotifications(
+          tokens
+            .filter((t: { push_token: string }) => t.push_token)
+            .map((t: { push_token: string }) => ({
+              to: t.push_token,
+              title: '🛵 Nuevo pedido cerca de ti',
+              body: description,
+              data: { type: 'new_order' },
+            })),
+        );
+      }
+
       Alert.alert('¡Éxito!', `Buscando repartidor... Hay ${drivers.length} cerca de ti.`);
       fetchOrders();
       return true;
@@ -106,6 +126,17 @@ export const useOrders = () => {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      const { data: token } = await supabase.rpc('get_client_push_token', { order_id: orderId });
+      if (token) {
+        await sendPushNotifications({
+          to: token,
+          title: '¡Tu repartidor está en camino! 🛵',
+          body: 'Tu pedido fue aceptado. Sigue la ruta en el mapa.',
+          data: { type: 'order_accepted' },
+        });
+      }
+
       fetchOrders();
     } catch (error) {
       console.error('Error aceptando pedido:', error);
