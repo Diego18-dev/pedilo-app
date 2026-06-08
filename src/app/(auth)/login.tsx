@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { supabase } from '@/services/supabase';
 
@@ -9,22 +9,14 @@ export default function LoginScreen() {
 
   async function signInWithEmail() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) Alert.alert('Error', error.message);
     setLoading(false);
   }
 
   async function signUpWithEmail() {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
-
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) Alert.alert('Error', error.message);
     else Alert.alert('¡Éxito!', 'Revisa tu correo para verificar la cuenta.');
     setLoading(false);
@@ -33,7 +25,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenido a Pedilo</Text>
-      
+
       <TextInput
         style={styles.input}
         placeholder="Correo electrónico"
@@ -42,7 +34,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
       />
-      
+
       <TextInput
         style={styles.input}
         placeholder="Contraseña"
@@ -51,19 +43,11 @@ export default function LoginScreen() {
         secureTextEntry
       />
 
-      <TouchableOpacity 
-        style={[styles.button, styles.primaryButton]} 
-        onPress={signInWithEmail} 
-        disabled={loading}
-      >
+      <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={signInWithEmail} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Cargando...' : 'Iniciar Sesión'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={[styles.button, styles.secondaryButton]} 
-        onPress={signUpWithEmail} 
-        disabled={loading}
-      >
+      <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={signUpWithEmail} disabled={loading}>
         <Text style={styles.secondaryButtonText}>Crear Cuenta</Text>
       </TouchableOpacity>
     </View>

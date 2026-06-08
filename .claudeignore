@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Build outputs
+dist/
+build/
+.expo/
+
+# Carpetas nativas generadas por Expo (no se editan a mano)
+android/
+ios/
+
+# Supabase estado interno
+supabase/.branches/
+supabase/.temp/
+
+# Assets binarios (imágenes, fuentes) — no aportan contexto de código
+assets/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Entorno
+.env
+.env.local
+.env.*.local
