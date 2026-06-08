@@ -52,6 +52,7 @@ export const useOrders = () => {
     origin: string,
     destination: string,
     pickupCoords: { latitude: number; longitude: number },
+    dropoffCoords: { latitude: number; longitude: number },
   ) => {
     if (!user) return false;
 
@@ -81,6 +82,7 @@ export const useOrders = () => {
           destination_address: destination,
           status: 'pending',
           pickup_location: `POINT(${pickupCoords.longitude} ${pickupCoords.latitude})`,
+          dropoff_location: `POINT(${dropoffCoords.longitude} ${dropoffCoords.latitude})`,
         });
 
       if (error) throw error;

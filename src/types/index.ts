@@ -8,6 +8,7 @@ export interface Order {
   origin_address: string;
   destination_address: string;
   pickup_location: string | null;
+  dropoff_location: string | null;
   status: OrderStatus;
   price: number | null;
   created_at: string;

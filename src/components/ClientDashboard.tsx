@@ -49,7 +49,7 @@ export default function ClientDashboard() {
       return;
     }
     setIsSubmitting(true);
-    const success = await createOrder(description, origin, destination, pickupCoords);
+    const success = await createOrder(description, origin, destination, pickupCoords, dropoffCoords);
     if (success) {
       setDescription('');
       setOrigin('');
@@ -125,7 +125,7 @@ export default function ClientDashboard() {
 
       <View style={styles.topHeader}>
         <View style={styles.pill}>
-          <Text style={styles.pillText}>📍 Santa Cruz de la Sierra</Text>
+          <Text style={styles.pillText}>📍 Sucre, Bolivia</Text>
         </View>
       </View>
 
