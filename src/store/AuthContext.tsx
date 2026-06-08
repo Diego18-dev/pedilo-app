@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 type Profile = {
   role: 'client' | 'driver' | 'admin';
   full_name: string | null;
+  phone: string | null;
   avatar_url: string | null;
 };
 
@@ -33,10 +34,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     const { data } = await supabase
       .from('profiles')
-      .select('role, full_name, avatar_url')
+      .select('role, full_name, phone, avatar_url')
       .eq('id', userId)
       .single();
-    return data;
+    return data as Profile | null;
   };
 
   const refreshProfile = async () => {
