@@ -8,7 +8,12 @@ export const useLocation = () => {
   const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
+      let { status } = await Location.getForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+        status = newStatus;
+      }
 
       if (status !== 'granted') {
         setIsLoadingLocation(false);

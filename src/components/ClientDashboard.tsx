@@ -26,23 +26,22 @@ export default function ClientDashboard() {
   );
 
   useEffect(() => {
-    if (!activeOrder || activeOrder.status !== 'accepted' || !activeOrder.driver_id) return;
+    if (!activeOrder || activeOrder.status !== 'accepted') return;
 
-    const trackingSubscription = supabase
-      .channel(`tracking-${activeOrder.driver_id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${activeOrder.driver_id}` },
-        (payload) => {
-          if (payload.new.lat && payload.new.lng) {
-            setDriverCoords({ latitude: payload.new.lat, longitude: payload.new.lng });
-          }
-        },
-      )
-      .subscribe();
+    const fetchDriverLocation = async () => {
+      const { data } = await supabase.rpc('get_active_driver_location', {
+        order_id: activeOrder.id,
+      });
+      if (data && data.length > 0) {
+        setDriverCoords({ latitude: data[0].lat, longitude: data[0].lng });
+      }
+    };
 
-    return () => { supabase.removeChannel(trackingSubscription); };
-  }, [orders, profile]);
+    fetchDriverLocation();
+    const interval = setInterval(fetchDriverLocation, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeOrder?.id, activeOrder?.status]);
 
   const handleCreate = async () => {
     if (!description || !pickupCoords || !dropoffCoords) {
