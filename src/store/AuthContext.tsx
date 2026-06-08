@@ -13,6 +13,7 @@ type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   isLoading: true,
+  refreshProfile: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -28,38 +30,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role, full_name, avatar_url')
+      .eq('id', userId)
+      .single();
+    return data;
+  };
+
+  const refreshProfile = async () => {
+    if (!user) return;
+    const data = await fetchProfile(user.id);
+    setProfile(data);
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchSessionAndProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('role, full_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-
-        if (isMounted) {
-          setProfile(data);
-          setSession(session);
-          setUser(session.user);
-        }
-      }
-      if (isMounted) setIsLoading(false);
-    };
-
-    fetchSessionAndProfile();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (newSession?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('role, full_name, avatar_url')
-          .eq('id', newSession.user.id)
-          .single();
-
+        const data = await fetchProfile(newSession.user.id);
         setProfile(data);
         setSession(newSession);
         setUser(newSession.user);
@@ -71,14 +60,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, isLoading }}>
+    <AuthContext.Provider value={{ session, user, profile, isLoading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

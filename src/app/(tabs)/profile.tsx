@@ -6,7 +6,7 @@ import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 
 export default function ProfileScreen() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -56,6 +56,7 @@ export default function ProfileScreen() {
       if (updateError) throw updateError;
 
       setAvatarUrl(newAvatarUrl);
+      await refreshProfile();
       Alert.alert('¡Éxito!', 'Foto de perfil actualizada correctamente');
     } catch (error: any) {
       console.error(error);

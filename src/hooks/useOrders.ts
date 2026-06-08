@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
-import type { Order } from '@/types';
+import type { Order, OrderStatus } from '@/types';
 
 export const useOrders = () => {
   const { user, profile } = useAuth();
@@ -112,7 +112,7 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const { error } = await supabase
         .from('orders')

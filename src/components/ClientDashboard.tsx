@@ -14,6 +14,7 @@ export default function ClientDashboard() {
 
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [pickupCoords, setPickupCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [dropoffCoords, setDropoffCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectingMode, setSelectingMode] = useState<'pickup' | 'dropoff'>('pickup');
@@ -65,7 +66,7 @@ export default function ClientDashboard() {
     if (activeOrder) return;
 
     const coords = e.nativeEvent.coordinate;
-    setIsSubmitting(true);
+    setIsGeocoding(true);
     try {
       const geocode = await Location.reverseGeocodeAsync(coords);
       let addressText = 'Ubicación seleccionada';
@@ -91,7 +92,7 @@ export default function ClientDashboard() {
         setDestination(fallbackText);
       }
     } finally {
-      setIsSubmitting(false);
+      setIsGeocoding(false);
     }
   };
 
@@ -142,7 +143,11 @@ export default function ClientDashboard() {
             />
             <View style={styles.instructionBox}>
               <Text style={styles.instructionText}>
-                {selectingMode === 'pickup' ? '1️⃣ Toca el mapa para RECOJO' : '2️⃣ Ahora toca para ENTREGA'}
+                {isGeocoding
+                  ? 'Obteniendo dirección...'
+                  : selectingMode === 'pickup'
+                  ? '1️⃣ Toca el mapa para RECOJO'
+                  : '2️⃣ Ahora toca para ENTREGA'}
               </Text>
             </View>
             <View style={styles.addressPreview}>
