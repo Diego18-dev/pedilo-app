@@ -12,6 +12,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="history"
+        options={{
+          title: 'Historial',
+          tabBarIcon: ({ color }) => <FontAwesome name="clock-o" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Mi Perfil',
